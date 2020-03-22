@@ -1,5 +1,6 @@
 import os
 import sys
+import ast
 import pandas as pd
 import numpy as np
 from pymatgen.core.structure import Structure
@@ -16,8 +17,13 @@ transition_metals = { 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe',
                       'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru',
                       'Rh', 'Pd', 'Ag', 'Cd',
                       'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir',
-                      'Pt', 'Au', 'Hg'}
+                      'Pt', 'Au', 'Hg' }
 
+# supporting ligands
+ligands = { 'B', 'C', 'Si', 'Ge', 'Sn',
+            'N', 'P', 'As', 'Sb', 'Bi',
+            'O', 'S', 'Se', 'Te',
+            'F', 'Cl', 'Br', 'I' }
 
 def cluster_miner(data, dR):
     # output
@@ -25,7 +31,8 @@ def cluster_miner(data, dR):
     
     for index, irow in data.iterrows():
         struct = Structure.from_str(irow['cif'], fmt="cif")
-        if not set(str(x) for x in struct.species) & transition_metals:
+        species = set(str(x) for x in struct.species)
+        if not (species & transition_metals and species & ligands):
             continue
     
         # cluter identification
@@ -39,22 +46,33 @@ def cluster_miner(data, dR):
             def dfs(jsite):
                 rj = jsite.specie.average_ionic_radius
                 assert(rj > 0)
-                for jdx, ksite in enumerate(struct.sites):
-                    if (str(ksite.specie) in transition_metals) and jdx not in visited:
+                for kdx, ksite in enumerate(struct.sites):
+                    if (str(ksite.specie) in transition_metals) and kdx not in visited:
                         rk = ksite.specie.average_ionic_radius
                         assert(rk > 0)
                         if ksite.distance(jsite) <= (rj + rk + dR):
-                            visited.add(jdx)
+                            visited.add(kdx)
                             cluster.append(ksite)
                             dfs(ksite)
             dfs(isite)
-            if len(cluster) == 4:
-                clusters.append(cluster)
+            if len(cluster) != 4: continue
+
+            ignore = False
+            for s in range(len(cluster)-1):
+                rs = cluster[s].specie.average_ionic_radius
+                for t in range(s+1, len(cluster)):
+                    rt = cluster[t].specie.average_ionic_radius
+                    dist = cluster[t].distance(cluster[s])
+                    assert(dist > 1.0)
+                    if dist > rs + rt + dR:
+                        ignore = True
+            if not ignore: clusters.append(cluster)
         
         # is this a candidate MIT material?
         if len(clusters) > 0:
-            print('one hit')
-            candidates.append([irow['material_id'], clusters])
+            sg = ast.literal_eval(irow['spacegroup'])
+            print(irow['material_id'], irow['pretty_formula'], sg['symbol'])
+            candidates.append([irow['material_id'], clusters, sg['symbol'], irow['cif']])
 
     return pd.DataFrame(candidates)
 
@@ -77,10 +95,17 @@ def main():
     nworkers = max(multiprocessing.cpu_count()-2, 1)
     print("number of workers: {}".format(nworkers))
     # maximum distance between "connected" atoms 
-    dR = 1.5
+    dR = 2.0
+
     # cluster miner
     cluster_compounds = parallel_computing(MP_data, nworkers, dR)
-    print(cluster_compounds.shape[0])
+    print("number of candidate cluster compounds: {}".format(cluster_compounds.shape[0]))
+    print(cluster_compounds)
+
+    # save output
+    header = ['material_id', 'clusters', 'spacegroup', 'cif']
+    cluster_compounds.to_csv("./data/cluster_candidates.csv", sep=';', \
+                                header=header, index=None, columns=None)
 
 
 if __name__ == "__main__":
