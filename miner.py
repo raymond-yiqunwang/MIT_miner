@@ -24,10 +24,6 @@ def cluster_miner(data, dR):
     candidates = []
     
     for index, irow in data.iterrows():
-        # print checkpoint
-        if ((index+1)%100 == 0): print("check point: {}/{}".format(index+1, data.shape[0]))
-        sys.stdout.flush()
-
         struct = Structure.from_str(irow['cif'], fmt="cif")
         if not set(str(x) for x in struct.species) & transition_metals:
             continue
