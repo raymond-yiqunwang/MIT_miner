@@ -17,7 +17,7 @@ def main():
     
     for index, irow in data.iterrows():
         material_id = irow['material_id']
-        sg = irow['spacegroup']
+        sg = irow['spacegroup'].replace('/', '^')
         clusters = ast.literal_eval(irow['clusters'])
         cif = irow['cif']
 
@@ -82,8 +82,9 @@ def main():
             out_dir = './figures/'
             if not os.path.exists(out_dir):
                 os.mkdir(out_dir)
-            fig.savefig(out_dir+material_id+'_'+'_cluster'+str(icluster)+'.png', dpi=80)
+            fig.savefig(out_dir+material_id+'_'+sg+'_cluster'+str(icluster)+'.png', dpi=80)
             plt.close()
+        break
 
 
 if __name__ == "__main__":
