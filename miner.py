@@ -34,6 +34,7 @@ def cluster_miner(data, dR):
         for idx, isite in enumerate(struct.sites):
             if idx in visited or str(isite.specie) not in transition_metals:
                 continue
+            visited.add(idx)
             cluster = [isite]
             def dfs(jsite):
                 rj = jsite.specie.average_ionic_radius
