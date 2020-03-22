@@ -66,7 +66,7 @@ def cluster_miner(data, dR):
                     assert(dist > 1.0)
                     if dist > rs + rt + dR:
                         ignore = True
-            if not ignore: clusters.append(cluster)
+            if not ignore: clusters.append([x.coords.tolist() for x in cluster])
         
         # is this a candidate MIT material?
         if len(clusters) > 0:
@@ -95,7 +95,7 @@ def main():
     nworkers = max(multiprocessing.cpu_count()-2, 1)
     print("number of workers: {}".format(nworkers))
     # maximum distance between "connected" atoms 
-    dR = 2.0
+    dR = 1.0
 
     # cluster miner
     cluster_compounds = parallel_computing(MP_data, nworkers, dR)
