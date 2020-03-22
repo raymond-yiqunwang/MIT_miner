@@ -95,7 +95,7 @@ def main():
     nworkers = max(multiprocessing.cpu_count()-2, 1)
     print("number of workers: {}".format(nworkers))
     # maximum distance between "connected" atoms 
-    dR = 1.0
+    dR = 2.0
 
     # cluster miner
     cluster_compounds = parallel_computing(MP_data, nworkers, dR)

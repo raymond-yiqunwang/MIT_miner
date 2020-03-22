@@ -62,7 +62,7 @@ def main():
             ys = []
             zs = []
             # add cluster
-            for atom in coords:
+            for atom in cluster:
                 xs.append(atom[0])
                 ys.append(atom[1])
                 zs.append(atom[2])
@@ -84,7 +84,6 @@ def main():
                 os.mkdir(out_dir)
             fig.savefig(out_dir+material_id+'_'+sg+'_cluster'+str(icluster)+'.png', dpi=80)
             plt.close()
-        break
 
 
 if __name__ == "__main__":
