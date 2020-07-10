@@ -58,6 +58,7 @@ def cluster_miner(data, dR):
             if len(cluster) != 4: continue
 
             ignore = False
+            # compare distance
             for s in range(len(cluster)-1):
                 rs = cluster[s].specie.average_ionic_radius
                 for t in range(s+1, len(cluster)):
@@ -66,13 +67,25 @@ def cluster_miner(data, dR):
                     assert(dist > 1.0)
                     if dist > rs + rt + dR:
                         ignore = True
+            
+            # check geometry
+            vec1 = cluster[1].coords - cluster[0].coords
+            vec2 = cluster[2].coords - cluster[0].coords
+            vec3 = cluster[3].coords - cluster[0].coords
+            vec3 /= np.linalg.norm(vec3)
+            tmpvec = np.cross(vec1, vec2)
+            tmpvec /= np.linalg.norm(tmpvec)
+            if not 0.76 < np.dot(vec3, tmpvec) < 0.87:
+                ignore = True
+
             if not ignore: clusters.append([x.coords.tolist() for x in cluster])
         
         # is this a candidate MIT material?
         if len(clusters) > 0:
             sg = ast.literal_eval(irow['spacegroup'])
             print(irow['material_id'], irow['pretty_formula'], sg['symbol'])
-            candidates.append([irow['material_id'], clusters, sg['symbol'], irow['cif']])
+            candidates.append([irow['material_id'], irow['pretty_formula'], \
+                               clusters, sg['symbol'], irow['cif']])
 
     return pd.DataFrame(candidates)
 
@@ -103,7 +116,7 @@ def main():
     print(cluster_compounds)
 
     # save output
-    header = ['material_id', 'clusters', 'spacegroup', 'cif']
+    header = ['material_id', 'pretty_formula', 'clusters', 'spacegroup', 'cif']
     cluster_compounds.to_csv("./data/cluster_candidates.csv", sep=';', \
                                 header=header, index=None, columns=None)
 

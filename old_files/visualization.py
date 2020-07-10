@@ -1,5 +1,6 @@
 import os
 import ast
+import shutil
 import numpy as np
 import pandas as pd
 from pymatgen.core.structure import Structure
@@ -14,9 +15,14 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 def main():
     data = pd.read_csv("./data/cluster_candidates.csv", sep=';', header=0, index_col=None)
+    out_dir = './figures/'
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.mkdir(out_dir)
     
     for index, irow in data.iterrows():
         material_id = irow['material_id']
+        formula = irow['pretty_formula']
         sg = irow['spacegroup'].replace('/', '^')
         clusters = ast.literal_eval(irow['clusters'])
         cif = irow['cif']
@@ -79,10 +85,8 @@ def main():
             ax.set_ylabel('y')
             ax.set_zlabel('z')
         
-            out_dir = './figures/'
-            if not os.path.exists(out_dir):
-                os.mkdir(out_dir)
-            fig.savefig(out_dir+material_id+'_'+sg+'_cluster'+str(icluster)+'.png', dpi=80)
+            fig.savefig(out_dir+formula+'_'+sg+'_'+material_id+'_'+'_cluster' \
+                    +str(icluster)+'.png', dpi=80)
             plt.close()
 
 
